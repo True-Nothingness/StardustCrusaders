@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -24,7 +25,7 @@ import java.util.ListIterator;
 import java.util.Locale;
 
 class GameScreen implements Screen {
-
+    final SpaceShooterGame game;
     //screen
     private Camera camera;
     private Viewport viewport;
@@ -33,6 +34,8 @@ class GameScreen implements Screen {
     private SpriteBatch batch;
     private TextureAtlas textureAtlas;
     private Texture explosionTexture;
+    private Texture pauseTexture;
+    private Sprite pauseSprite;
 
     private TextureRegion[] backgrounds;
     private float backgroundHeight; //height of background in World units
@@ -60,13 +63,14 @@ class GameScreen implements Screen {
     private LinkedList<Explosion> explosionList;
 
     private int score = 0;
+    private boolean paused = false;
 
     //Heads-Up Display
     BitmapFont font;
     float hudVerticalMargin, hudLeftX, hudRightX, hudCentreX, hudRow1Y, hudRow2Y, hudSectionWidth;
 
-    GameScreen() {
-
+    GameScreen(final SpaceShooterGame game) {
+        this.game = game;
         camera = new OrthographicCamera();
         viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
 
@@ -94,11 +98,13 @@ class GameScreen implements Screen {
         enemyLaserTextureRegion.flip(false, true);
 
         explosionTexture = new Texture("explosion.png");
-
+        pauseTexture = new Texture("Pause.png");
+        pauseSprite = new Sprite(pauseTexture);
+        pauseSprite.setPosition(WORLD_WIDTH / 3,WORLD_HEIGHT);
         //set up game objects
         playerShip = new PlayerShip(WORLD_WIDTH / 2, WORLD_HEIGHT / 4,
                 10, 10,
-                48, 3,
+                48, 0,
                 1f, 4, 45, 0.5f,
                 playerShipTextureRegion, playerShieldTextureRegion, playerLaserTextureRegion);
 
@@ -141,6 +147,8 @@ class GameScreen implements Screen {
 
     @Override
     public void render(float deltaTime) {
+        if(paused){return;}
+
         batch.begin();
 
         //scrolling background
@@ -172,6 +180,7 @@ class GameScreen implements Screen {
 
         //hud rendering
         updateAndRenderHUD();
+        pauseSprite.draw(batch);
 
         batch.end();
     }
@@ -179,11 +188,11 @@ class GameScreen implements Screen {
     private void updateAndRenderHUD() {
         //render top row labels
         font.draw(batch, "Score", hudLeftX, hudRow1Y, hudSectionWidth, Align.left, false);
-        font.draw(batch, "Shield", hudCentreX, hudRow1Y, hudSectionWidth, Align.center, false);
+        //font.draw(batch, "Shield", hudCentreX, hudRow1Y, hudSectionWidth, Align.center, false);
         font.draw(batch, "Lives", hudRightX, hudRow1Y, hudSectionWidth, Align.right, false);
         //render second row values
         font.draw(batch, String.format(Locale.getDefault(), "%06d", score), hudLeftX, hudRow2Y, hudSectionWidth, Align.left, false);
-        font.draw(batch, String.format(Locale.getDefault(), "%02d", playerShip.shield), hudCentreX, hudRow2Y, hudSectionWidth, Align.center, false);
+        //font.draw(batch, String.format(Locale.getDefault(), "%02d", playerShip.shield), hudCentreX, hudRow2Y, hudSectionWidth, Align.center, false);
         font.draw(batch, String.format(Locale.getDefault(), "%02d", playerShip.lives), hudRightX, hudRow2Y, hudSectionWidth, Align.right, false);
     }
 
@@ -319,8 +328,11 @@ class GameScreen implements Screen {
                             new Explosion(explosionTexture,
                                     new Rectangle(playerShip.boundingBox),
                                     1.6f));
-                    playerShip.shield = 10;
                     playerShip.lives--;
+                    if (playerShip.lives == 0){
+                        //clearGameState();
+                        game.setScreen(game.mainMenuScreen);
+                    }
                 }
                 laserListIterator.remove();
             }
@@ -395,7 +407,15 @@ class GameScreen implements Screen {
                     WORLD_WIDTH, backgroundHeight);
         }
     }
-
+    private void clearGameState() {
+        paused = true;
+        // Clear all entities and reset relevant game variables
+        enemyShipList.clear();
+        playerLaserList.clear();
+        enemyLaserList.clear();
+        explosionList.clear();
+        score = 0;
+    }
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
