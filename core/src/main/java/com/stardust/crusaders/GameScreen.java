@@ -3,6 +3,7 @@ package com.stardust.crusaders;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
@@ -38,7 +39,7 @@ class GameScreen implements Screen {
     //screen
     private Camera camera;
     private Viewport viewport;
-    private boolean sfxState;
+    private boolean sfxState, bgmState;
     //graphics
     private SpriteBatch batch;
     private TextureAtlas textureAtlas;
@@ -56,6 +57,7 @@ class GameScreen implements Screen {
 
     //sfx
     private Sound death, laser, power;
+    private Music music;
 
     //timing
     private float[] backgroundOffsets = {0, 0, 0, 0};
@@ -63,6 +65,9 @@ class GameScreen implements Screen {
     float timeBetweenEnemySpawns;
     private float enemySpawnTimer = 0;
 
+    //control
+    private Vector2 touchPoint = new Vector2();
+    private Vector2 playerShipCentre = new Vector2();
     //world parameters
     private final float WORLD_WIDTH = 72;
     private final float WORLD_HEIGHT = 128;
@@ -87,6 +92,7 @@ class GameScreen implements Screen {
 
     GameScreen(final SpaceShooterGame game) {
         this.game = game;
+        music = game.music;
         if(game.mode.equals(SpaceShooterGame.MODE.EASY)){
             timeBetweenEnemySpawns = 1.4f;
             gachaRate = 30;
@@ -142,8 +148,8 @@ class GameScreen implements Screen {
         //set up game objects
         playerShip = new PlayerShip(WORLD_WIDTH / 2, WORLD_HEIGHT / 4,
                 10, 10,
-                48, 0,
-                1.5f, 4, 45, 0.5f,
+                60, 0,
+                2f, 4.2f, 45, 0.5f,
                 playerShipTextureRegion, playerShieldTextureRegion, playerLaserTextureRegion);
 
         enemyShipList = new LinkedList<>();
@@ -184,7 +190,6 @@ class GameScreen implements Screen {
 
     @Override
     public void render(float deltaTime) {
-        sfxState = game.prefs.getBoolean("sfxState");
         if(!isPaused&&!gameOver){
         batch.begin();
         //scrolling background
@@ -267,13 +272,11 @@ class GameScreen implements Screen {
 
     private void detectInput(float deltaTime) {
 
-
         float leftLimit, rightLimit, upLimit, downLimit;
         leftLimit = -playerShip.boundingBox.x;
         downLimit = -playerShip.boundingBox.y;
         rightLimit = WORLD_WIDTH - playerShip.boundingBox.x - playerShip.boundingBox.width;
         upLimit =  WORLD_HEIGHT / 2 - playerShip.boundingBox.y - playerShip.boundingBox.height;
-
 
         //touch input (also mouse)
         if (Gdx.input.isTouched()) {
@@ -282,13 +285,13 @@ class GameScreen implements Screen {
             float yTouchPixels = Gdx.input.getY();
 
             //convert to world position
-            Vector2 touchPoint = new Vector2(xTouchPixels, yTouchPixels);
+            touchPoint.set(xTouchPixels, yTouchPixels);
             touchPoint = viewport.unproject(touchPoint);
 
             //calculate the x and y differences
-            Vector2 playerShipCentre = new Vector2(
-                    playerShip.boundingBox.x + playerShip.boundingBox.width / 2,
-                    playerShip.boundingBox.y + playerShip.boundingBox.height / 2);
+            playerShipCentre.set(
+                playerShip.boundingBox.x + playerShip.boundingBox.width / 2,
+                playerShip.boundingBox.y + playerShip.boundingBox.height / 2);
 
             float touchDistance = touchPoint.dst(playerShipCentre);
 
@@ -349,7 +352,7 @@ class GameScreen implements Screen {
                                 new Explosion(explosionTexture,
                                         new Rectangle(enemyShip.boundingBox),
                                         0.7f));
-                        if(sfxState){death.play(1f);}
+                        if(sfxState){death.play(4f);}
                         score += 100*multiplier;
                         int gacha = SpaceShooterGame.random.nextInt(100);
                         if (gacha < gachaRate) {
@@ -374,7 +377,7 @@ class GameScreen implements Screen {
                                     1.6f));
                     playerShip.lives--;
                     if (playerShip.lives == 0){
-                        if(sfxState){death.play(1f);}
+                        if(sfxState){death.play(4f);}
                         gameOver = true;
                     }
                 }
@@ -401,7 +404,7 @@ class GameScreen implements Screen {
         //player lasers
         if (playerShip.canFireLaser()) {
             Laser[] lasers = playerShip.fireLasers();
-            if(sfxState){laser.play(1f);}
+            if(sfxState){laser.play(4f);}
             playerLaserList.addAll(Arrays.asList(lasers));
         }
         //enemy lasers
@@ -437,9 +440,9 @@ class GameScreen implements Screen {
         if (powerupList.isEmpty()) {
             int randomType = SpaceShooterGame.random.nextInt(2);  // Assuming 3 types of power-ups
             if (randomType == 0) {
-                powerupList.add(new PowerUp(PowerUp.PowerUpType.SHIELD, shieldPowerupTextureRegion, x, y, 3, 3));
+                powerupList.add(new PowerUp(PowerUp.PowerUpType.SHIELD, shieldPowerupTextureRegion, x, y, 5, 5));
             } else {
-                powerupList.add(new PowerUp(PowerUp.PowerUpType.FIRE_RATE, firePowerupTextureRegion, x, y, 3, 3));
+                powerupList.add(new PowerUp(PowerUp.PowerUpType.FIRE_RATE, firePowerupTextureRegion, x, y, 5, 5));
             }
         }
     }
@@ -450,7 +453,8 @@ class GameScreen implements Screen {
             if (playerShip.intersects(powerup.boundingBox)) {
                 //contact with player ship
                 applyPowerUpEffect(powerup.getType());
-                power.play();
+                power.play(5f);
+                score += 100;
                 powerListIterator.remove();
             }
             if (powerup.height<0){
@@ -496,6 +500,7 @@ class GameScreen implements Screen {
         powerupList.clear();
         resetPlayer();
         score = 0;
+        music.stop();
         isPaused = false;
         gameOver = false;
     }
@@ -556,7 +561,11 @@ class GameScreen implements Screen {
                 isPaused = true;
             }
         });
-
+        sfxState = game.prefs.getBoolean("sfxState");
+        bgmState = game.prefs.getBoolean("bgmState");
+        if(bgmState){
+            music.play();
+        }
         // Set the stage to handle input
         Gdx.input.setInputProcessor(stage);
     }

@@ -22,7 +22,7 @@ public class SpaceShooterGame extends Game {
     public GameOverScreen gameoverScreen;
     public static Random random = new Random();
     BitmapFont fontItalic, fontRegular;
-    Music music;
+    Music music, menu;
     Sound death, laser, power;
     boolean bgmState, sfxState = true;
     Preferences prefs;
@@ -36,6 +36,7 @@ public class SpaceShooterGame extends Game {
     @Override
     public void create() {
         music = Gdx.audio.newMusic(Gdx.files.internal("music/bgm.ogg"));
+        menu = Gdx.audio.newMusic(Gdx.files.internal("music/menu.ogg"));
         death = Gdx.audio.newSound(Gdx.files.internal("music/death.ogg"));
         laser = Gdx.audio.newSound(Gdx.files.internal("music/laser.ogg"));
         power = Gdx.audio.newSound(Gdx.files.internal("music/power.ogg"));
@@ -79,10 +80,9 @@ public class SpaceShooterGame extends Game {
         pauseScreen = new PauseScreen(this);
         gameoverScreen = new GameOverScreen(this);
         music.setLooping(true);
-        music.setVolume(0.3f);
-        if (bgmState){
-        music.play();
-        }
+        music.setVolume(0.05f);
+        menu.setLooping(true);
+        menu.setVolume(0.3f);
         // Start with the Main Menu Screen
         setScreen(mainMenuScreen);
     }

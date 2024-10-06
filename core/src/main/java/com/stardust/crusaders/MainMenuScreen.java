@@ -2,6 +2,7 @@ package com.stardust.crusaders;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -27,7 +28,9 @@ public class MainMenuScreen implements Screen {
     private Viewport viewport;
     private Label titleLabel, startLabel, optLabel, hsLabel, quitLabel;
     private Stage stage;
+    private Music menu;
     final SpaceShooterGame game;
+    private boolean bgmState;
     //world parameters
     private final float WORLD_WIDTH = 72;
     private final float WORLD_HEIGHT = 128;
@@ -36,12 +39,17 @@ public class MainMenuScreen implements Screen {
         camera = new OrthographicCamera();
         viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
         menuBGTexture = new Texture("bg.png");
+        bgmState = game.bgmState;
+        menu = game.menu;
         batch = new SpriteBatch();
         stage = new Stage();
     }
     @Override
     public void show() {
         // Load assets here (fonts, textures)
+        if (bgmState){
+            menu.play();
+        }
         Gdx.input.setInputProcessor(stage);
     }
 
@@ -69,6 +77,9 @@ public class MainMenuScreen implements Screen {
         startLabel.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
+                if (menu.isPlaying()){
+                    menu.stop();
+                }
                 game.setScreen(game.gameScreen);
             }
         });

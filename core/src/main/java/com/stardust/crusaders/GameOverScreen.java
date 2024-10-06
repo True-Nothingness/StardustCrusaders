@@ -71,7 +71,7 @@ public class GameOverScreen implements Screen {
     public void prepareButtons(){
         TextureRegionDrawable resetDrawable = new TextureRegionDrawable(resetTextureRegion);
         resetButton = new ImageButton(resetDrawable);
-        resetButton.setPosition((Gdx.graphics.getWidth() - resetButton.getWidth())/3, 900);
+        resetButton.setPosition((Gdx.graphics.getWidth() - resetButton.getWidth())/3, 700);
         resetButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
@@ -81,7 +81,7 @@ public class GameOverScreen implements Screen {
         });
         TextureRegionDrawable menuDrawable = new TextureRegionDrawable(menuTextureRegion);
         menuButton = new ImageButton(menuDrawable);
-        menuButton.setPosition((Gdx.graphics.getWidth() - menuButton.getWidth())*2/3, 900);
+        menuButton.setPosition((Gdx.graphics.getWidth() - menuButton.getWidth())*2/3, 700);
         menuButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
