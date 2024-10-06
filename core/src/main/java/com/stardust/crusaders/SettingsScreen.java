@@ -25,8 +25,10 @@ public class SettingsScreen implements Screen {
     private Camera camera;
     private boolean sfxState, bgmState;
     final SpaceShooterGame game;
-    private Label titleLabel,sfxLabel, bgmLabel, backLabel;
+    private Label titleLabel,sfxLabel, bgmLabel, backLabel, difficultyLabel;
     private Stage stage;
+    private SpaceShooterGame.MODE mode;
+
     SettingsScreen(final SpaceShooterGame game){
         this.game = game;
         camera = new OrthographicCamera();
@@ -35,6 +37,7 @@ public class SettingsScreen implements Screen {
         bgmState = game.bgmState;
         batch = new SpriteBatch();
         stage = new Stage();
+        mode = game.mode;
         prepareLabel();
     }
     @Override
@@ -72,7 +75,7 @@ public class SettingsScreen implements Screen {
                 game.prefs.flush();
             }
         });
-        bgmLabel = new Label("BGM: "+(bgmState ? "ON" : "OFF"), new Label.LabelStyle(game.fontRegular, customColor));
+        bgmLabel = new Label("MODE: "+(bgmState ? "ON" : "OFF"), new Label.LabelStyle(game.fontRegular, customColor));
         bgmLabel.setPosition(100, 1300);
         bgmLabel.addListener(new ClickListener(){
             @Override
@@ -87,8 +90,29 @@ public class SettingsScreen implements Screen {
                 game.prefs.flush();
             }
         });
+        difficultyLabel = new Label("MODE: "+mode.name(), new Label.LabelStyle(game.fontRegular, customColor));
+        difficultyLabel.setPosition(100, 1100);
+        difficultyLabel.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y){
+                if(game.mode.equals(SpaceShooterGame.MODE.MEDIUM)){
+                    mode = SpaceShooterGame.MODE.HARD;
+                    game.gameScreen.
+                    game.prefs.putInteger("mode", 2);
+                    game.prefs.flush();
+                } else if (game.mode.equals(SpaceShooterGame.MODE.HARD)) {
+                    mode = SpaceShooterGame.MODE.EASY;
+                    game.prefs.putInteger("mode", 0);
+                    game.prefs.flush();
+                } else {
+                    mode = SpaceShooterGame.MODE.MEDIUM;
+                    game.prefs.putInteger("mode", 1);
+                    game.prefs.flush();
+                }
+            }
+        });
         backLabel = new Label("MAIN MENU", new Label.LabelStyle(game.fontRegular, customColor));
-        backLabel.setPosition(100, 1100);
+        backLabel.setPosition(100, 900);
         backLabel.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
@@ -98,11 +122,13 @@ public class SettingsScreen implements Screen {
         stage.addActor(titleLabel);
         stage.addActor(sfxLabel);
         stage.addActor(bgmLabel);
+        stage.addActor(difficultyLabel);
         stage.addActor(backLabel);
     }
     private void updateLabel(){
         sfxLabel.setText("SFX: " + (sfxState ? "ON" : "OFF"));
         bgmLabel.setText("BGM: " + (bgmState ? "ON" : "OFF"));
+        difficultyLabel.setText("MODE: "+mode.name());
     }
     @Override
     public void resize(int width, int height) {}

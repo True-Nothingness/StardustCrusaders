@@ -50,7 +50,9 @@ class GameScreen implements Screen {
     private TextureRegion playerShipTextureRegion, playerShieldTextureRegion,
             enemyShipTextureRegion, enemyShieldTextureRegion,
             playerLaserTextureRegion, enemyLaserTextureRegion,
-            shieldPowerupTextureRegion, firePowerupTextureRegion;
+            shieldPowerupTextureRegion, firePowerupTextureRegion,
+            enemyShipTextureRegion2, enemyShieldTextureRegion2,
+            enemyLaserTextureRegion2;
 
     //sfx
     private Sound death, laser, power;
@@ -58,13 +60,14 @@ class GameScreen implements Screen {
     //timing
     private float[] backgroundOffsets = {0, 0, 0, 0};
     private float backgroundMaxScrollingSpeed;
-    private float timeBetweenEnemySpawns = 1f;
+    float timeBetweenEnemySpawns;
     private float enemySpawnTimer = 0;
 
     //world parameters
     private final float WORLD_WIDTH = 72;
     private final float WORLD_HEIGHT = 128;
     private final float TOUCH_MOVEMENT_THRESHOLD = 5f;
+    int gachaRate;
 
     //game objects
     private PlayerShip playerShip;
@@ -75,6 +78,7 @@ class GameScreen implements Screen {
     private LinkedList<PowerUp> powerupList;
 
     private int score = 0;
+    int multiplier;
     private boolean isPaused, gameOver = false;
 
     //Heads-Up Display
@@ -83,6 +87,19 @@ class GameScreen implements Screen {
 
     GameScreen(final SpaceShooterGame game) {
         this.game = game;
+        if(game.mode.equals(SpaceShooterGame.MODE.EASY)){
+            timeBetweenEnemySpawns = 1.4f;
+            gachaRate = 30;
+            multiplier = 1;
+        } else if(game.mode.equals(SpaceShooterGame.MODE.MEDIUM)){
+            timeBetweenEnemySpawns = 1.2f;
+            gachaRate = 20;
+            multiplier = 2;
+        } else {
+            timeBetweenEnemySpawns = 1f;
+            gachaRate = 10;
+            multiplier = 3;
+        }
         camera = new OrthographicCamera();
         viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
         //set up the texture atlas
@@ -101,12 +118,16 @@ class GameScreen implements Screen {
         //initialize texture regions
         playerShipTextureRegion = textureAtlas.findRegion("Main Ship");
         enemyShipTextureRegion = textureAtlas.findRegion("Enemy Ship - Fighter");
+        enemyShipTextureRegion2 = textureAtlas.findRegion("Enemy Ship - Scout");
+
         playerShieldTextureRegion = textureAtlas.findRegion("Shield");
         enemyShieldTextureRegion = textureAtlas.findRegion("Fighter Shield");
+        enemyShieldTextureRegion2 = textureAtlas.findRegion("Scout Shield");
 
         playerLaserTextureRegion = textureAtlas.findRegion("Cannon bullet");
         enemyLaserTextureRegion = textureAtlas.findRegion("Fast bullet");
         enemyLaserTextureRegion.flip(false, true);
+        enemyLaserTextureRegion2 = textureAtlas.findRegion("Slow bullet");
         shieldPowerupTextureRegion = textureAtlas.findRegion("Shield Powerup");
         firePowerupTextureRegion = textureAtlas.findRegion("Fire Powerup");
 
@@ -224,12 +245,20 @@ class GameScreen implements Screen {
 
     private void spawnEnemyShips(float deltaTime) {
         enemySpawnTimer += deltaTime;
-
-        if (enemySpawnTimer > timeBetweenEnemySpawns) {
+        int gacha = SpaceShooterGame.random.nextInt(100);
+        if (enemySpawnTimer > timeBetweenEnemySpawns&&gacha>50) {
+            enemyShipList.add(new EnemyShip(SpaceShooterGame.random.nextFloat() * (WORLD_WIDTH - 10) + 5,
+                WORLD_HEIGHT - 5,
+                10, 10,
+                50, 1,
+                1.3f, 1.3f, 20, 0.9f,
+                enemyShipTextureRegion2, enemyShieldTextureRegion2, enemyLaserTextureRegion2));
+            enemySpawnTimer -= timeBetweenEnemySpawns;
+        } else if (enemySpawnTimer > timeBetweenEnemySpawns) {
             enemyShipList.add(new EnemyShip(SpaceShooterGame.random.nextFloat() * (WORLD_WIDTH - 10) + 5,
                     WORLD_HEIGHT - 5,
                     10, 10,
-                    48, 1,
+                    35, 2,
                     1f, 2, 50, 0.8f,
                     enemyShipTextureRegion, enemyShieldTextureRegion, enemyLaserTextureRegion));
             enemySpawnTimer -= timeBetweenEnemySpawns;
@@ -321,9 +350,9 @@ class GameScreen implements Screen {
                                         new Rectangle(enemyShip.boundingBox),
                                         0.7f));
                         if(sfxState){death.play(1f);}
-                        score += 100;
+                        score += 100*multiplier;
                         int gacha = SpaceShooterGame.random.nextInt(100);
-                        if (gacha < 10) {
+                        if (gacha < gachaRate) {
                             spawnPowerUp(score, WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
                         }
                     }
@@ -421,6 +450,7 @@ class GameScreen implements Screen {
             if (playerShip.intersects(powerup.boundingBox)) {
                 //contact with player ship
                 applyPowerUpEffect(powerup.getType());
+                power.play();
                 powerListIterator.remove();
             }
             if (powerup.height<0){
@@ -434,7 +464,7 @@ class GameScreen implements Screen {
                 playerShip.shield += 1;
                 break;
             case FIRE_RATE:
-                playerShip.timeBetweenShots *= 0.999f;
+                playerShip.timeBetweenShots *= 0.99f;
                 break;
             default:
                 break;

@@ -26,7 +26,13 @@ public class SpaceShooterGame extends Game {
     Sound death, laser, power;
     boolean bgmState, sfxState = true;
     Preferences prefs;
-
+    enum MODE{
+        EASY,
+        MEDIUM,
+        HARD
+    }
+    MODE mode;
+    int modeNumber = 1;
     @Override
     public void create() {
         music = Gdx.audio.newMusic(Gdx.files.internal("music/bgm.ogg"));
@@ -36,6 +42,20 @@ public class SpaceShooterGame extends Game {
         prefs = Gdx.app.getPreferences("My Preferences");
         bgmState = prefs.getBoolean("bgmState");
         sfxState = prefs.getBoolean("sfxState");
+        modeNumber = prefs.getInteger("mode");
+        switch (modeNumber){
+            case 0:
+                mode = MODE.EASY;
+                break;
+            case 1:
+                mode = MODE.MEDIUM;
+                break;
+            case 2:
+                mode = MODE.HARD;
+                break;
+            default:
+                break;
+        }
         FreeTypeFontGenerator fontItalicGen = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyPosterItalic-x3o1m.otf"));
         FreeTypeFontGenerator.FreeTypeFontParameter fontItalicParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
         fontItalicParameter.size = 110;
