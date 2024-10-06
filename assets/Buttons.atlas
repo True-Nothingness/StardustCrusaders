@@ -1,0 +1,11 @@
+Buttons.png
+size:1024,256
+repeat:none
+Menu
+bounds:150,0,150,150
+Play
+bounds:450,0,150,150
+Repeat
+bounds:300,0,150,150
+Save
+bounds:0,0,150,150

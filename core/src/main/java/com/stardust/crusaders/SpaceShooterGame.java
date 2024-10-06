@@ -2,6 +2,9 @@ package com.stardust.crusaders;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -15,14 +18,27 @@ public class SpaceShooterGame extends Game {
     public GameScreen gameScreen;
     public SettingsScreen settingsScreen;
     public HighscoreScreen highscoreScreen;
+    public PauseScreen pauseScreen;
+    public GameOverScreen gameoverScreen;
     public static Random random = new Random();
     BitmapFont fontItalic, fontRegular;
+    Music music;
+    Sound death, laser, power;
+    boolean bgmState, sfxState = true;
+    Preferences prefs;
 
     @Override
     public void create() {
+        music = Gdx.audio.newMusic(Gdx.files.internal("music/bgm.ogg"));
+        death = Gdx.audio.newSound(Gdx.files.internal("music/death.ogg"));
+        laser = Gdx.audio.newSound(Gdx.files.internal("music/laser.ogg"));
+        power = Gdx.audio.newSound(Gdx.files.internal("music/power.ogg"));
+        prefs = Gdx.app.getPreferences("My Preferences");
+        bgmState = prefs.getBoolean("bgmState");
+        sfxState = prefs.getBoolean("sfxState");
         FreeTypeFontGenerator fontItalicGen = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyPosterItalic-x3o1m.otf"));
         FreeTypeFontGenerator.FreeTypeFontParameter fontItalicParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        fontItalicParameter.size = 106;
+        fontItalicParameter.size = 110;
         fontItalicParameter.borderWidth = 3.6f;
         fontItalicParameter.color = new Color(255, 214, 0, 255);
         fontItalicParameter.borderColor = new Color(0, 0, 0, 0.3f);
@@ -30,7 +46,7 @@ public class SpaceShooterGame extends Game {
         fontItalicGen.dispose();
         FreeTypeFontGenerator fontRegularGen = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyRegular-OVEa6.otf"));
         FreeTypeFontGenerator.FreeTypeFontParameter fontRegularParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        fontRegularParameter.size = 64;
+        fontRegularParameter.size = 70;
         fontRegularParameter.borderWidth = 3.6f;
         fontRegularParameter.color = new Color(255, 214, 0, 255);
         fontRegularParameter.borderColor = new Color(0, 0, 0, 0.3f);
@@ -40,6 +56,13 @@ public class SpaceShooterGame extends Game {
         gameScreen = new GameScreen(this);
         settingsScreen = new SettingsScreen(this);
         highscoreScreen = new HighscoreScreen(this);
+        pauseScreen = new PauseScreen(this);
+        gameoverScreen = new GameOverScreen(this);
+        music.setLooping(true);
+        music.setVolume(0.3f);
+        if (bgmState){
+        music.play();
+        }
         // Start with the Main Menu Screen
         setScreen(mainMenuScreen);
     }
@@ -50,6 +73,14 @@ public class SpaceShooterGame extends Game {
         gameScreen.dispose();
         settingsScreen.dispose();
         highscoreScreen.dispose();
+        pauseScreen.dispose();
+        gameoverScreen.dispose();
+        if (music != null) {
+            music.dispose(); // Dispose of the music when the game is done
+        }
+        laser.dispose();
+        death.dispose();
+        power.dispose();
     }
 
     @Override

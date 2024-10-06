@@ -3,6 +3,7 @@ package com.stardust.crusaders;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -15,6 +16,11 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -26,23 +32,28 @@ import java.util.Locale;
 
 class GameScreen implements Screen {
     final SpaceShooterGame game;
+    private Stage stage;
+    private ImageButton pauseButton;
+    private Texture pauseTexture;
     //screen
     private Camera camera;
     private Viewport viewport;
-
+    private boolean sfxState;
     //graphics
     private SpriteBatch batch;
     private TextureAtlas textureAtlas;
     private Texture explosionTexture;
-    private Texture pauseTexture;
-    private Sprite pauseSprite;
 
     private TextureRegion[] backgrounds;
     private float backgroundHeight; //height of background in World units
 
     private TextureRegion playerShipTextureRegion, playerShieldTextureRegion,
             enemyShipTextureRegion, enemyShieldTextureRegion,
-            playerLaserTextureRegion, enemyLaserTextureRegion;
+            playerLaserTextureRegion, enemyLaserTextureRegion,
+            shieldPowerupTextureRegion, firePowerupTextureRegion;
+
+    //sfx
+    private Sound death, laser, power;
 
     //timing
     private float[] backgroundOffsets = {0, 0, 0, 0};
@@ -61,9 +72,10 @@ class GameScreen implements Screen {
     private LinkedList<Laser> playerLaserList;
     private LinkedList<Laser> enemyLaserList;
     private LinkedList<Explosion> explosionList;
+    private LinkedList<PowerUp> powerupList;
 
     private int score = 0;
-    private boolean paused = false;
+    private boolean isPaused, gameOver = false;
 
     //Heads-Up Display
     BitmapFont font;
@@ -73,7 +85,6 @@ class GameScreen implements Screen {
         this.game = game;
         camera = new OrthographicCamera();
         viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
-
         //set up the texture atlas
         textureAtlas = new TextureAtlas("images.atlas");
 
@@ -85,7 +96,7 @@ class GameScreen implements Screen {
         backgrounds[3] = textureAtlas.findRegion("Starscape03");
 
         backgroundHeight = WORLD_HEIGHT * 2;
-        backgroundMaxScrollingSpeed = (float) (WORLD_HEIGHT) / 4;
+        backgroundMaxScrollingSpeed =  (WORLD_HEIGHT) / 4;
 
         //initialize texture regions
         playerShipTextureRegion = textureAtlas.findRegion("Main Ship");
@@ -96,30 +107,35 @@ class GameScreen implements Screen {
         playerLaserTextureRegion = textureAtlas.findRegion("Cannon bullet");
         enemyLaserTextureRegion = textureAtlas.findRegion("Fast bullet");
         enemyLaserTextureRegion.flip(false, true);
+        shieldPowerupTextureRegion = textureAtlas.findRegion("Shield Powerup");
+        firePowerupTextureRegion = textureAtlas.findRegion("Fire Powerup");
 
         explosionTexture = new Texture("explosion.png");
-        pauseTexture = new Texture("Pause.png");
-        pauseSprite = new Sprite(pauseTexture);
-        pauseSprite.setPosition(WORLD_WIDTH / 3,WORLD_HEIGHT);
+
+        //set up sfx
+        death = game.death;
+        laser = game.laser;
+        power = game.power;
+
+
         //set up game objects
         playerShip = new PlayerShip(WORLD_WIDTH / 2, WORLD_HEIGHT / 4,
                 10, 10,
                 48, 0,
-                1f, 4, 45, 0.5f,
+                1.5f, 4, 45, 0.5f,
                 playerShipTextureRegion, playerShieldTextureRegion, playerLaserTextureRegion);
 
         enemyShipList = new LinkedList<>();
 
         playerLaserList = new LinkedList<>();
         enemyLaserList = new LinkedList<>();
-
+        powerupList = new LinkedList<>();
         explosionList = new LinkedList<>();
 
         batch = new SpriteBatch();
 
         prepareHUD();
     }
-
     private void prepareHUD() {
         //Create a BitmapFont from our font file
         FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyRegular-OVEa6.otf"));
@@ -147,21 +163,17 @@ class GameScreen implements Screen {
 
     @Override
     public void render(float deltaTime) {
-        if(paused){return;}
-
+        sfxState = game.prefs.getBoolean("sfxState");
+        if(!isPaused&&!gameOver){
         batch.begin();
-
         //scrolling background
         renderBackground(deltaTime);
-
         detectInput(deltaTime);
         playerShip.update(deltaTime);
 
         spawnEnemyShips(deltaTime);
 
-        ListIterator<EnemyShip> enemyShipListIterator = enemyShipList.listIterator();
-        while (enemyShipListIterator.hasNext()) {
-            EnemyShip enemyShip = enemyShipListIterator.next();
+        for (EnemyShip enemyShip : enemyShipList) {
             moveEnemy(enemyShip, deltaTime);
             enemyShip.update(deltaTime);
             enemyShip.draw(batch);
@@ -178,11 +190,26 @@ class GameScreen implements Screen {
         //explosions
         updateAndRenderExplosions(deltaTime);
 
+        //powerups
+            for (PowerUp powerUps : powerupList) {
+                powerUps.update(deltaTime);
+                powerUps.draw(batch);
+            }
+            checkPowerUpCollisions();
         //hud rendering
         updateAndRenderHUD();
-        pauseSprite.draw(batch);
-
         batch.end();
+        }
+        stage.act();
+        stage.draw();
+        if(isPaused){
+            game.setScreen(game.pauseScreen);
+        }
+        if(gameOver){
+            game.gameoverScreen.setScore(score);
+            clearGameState();
+            game.setScreen(game.gameoverScreen);
+        }
     }
 
     private void updateAndRenderHUD() {
@@ -192,7 +219,6 @@ class GameScreen implements Screen {
         font.draw(batch, "Lives", hudRightX, hudRow1Y, hudSectionWidth, Align.right, false);
         //render second row values
         font.draw(batch, String.format(Locale.getDefault(), "%06d", score), hudLeftX, hudRow2Y, hudSectionWidth, Align.left, false);
-        //font.draw(batch, String.format(Locale.getDefault(), "%02d", playerShip.shield), hudCentreX, hudRow2Y, hudSectionWidth, Align.center, false);
         font.draw(batch, String.format(Locale.getDefault(), "%02d", playerShip.lives), hudRightX, hudRow2Y, hudSectionWidth, Align.right, false);
     }
 
@@ -211,30 +237,14 @@ class GameScreen implements Screen {
     }
 
     private void detectInput(float deltaTime) {
-        //keyboard input
 
-        //strategy: determine the max distance the ship can move
-        //check each key that matters and move accordingly
 
         float leftLimit, rightLimit, upLimit, downLimit;
         leftLimit = -playerShip.boundingBox.x;
         downLimit = -playerShip.boundingBox.y;
         rightLimit = WORLD_WIDTH - playerShip.boundingBox.x - playerShip.boundingBox.width;
-        upLimit = (float) WORLD_HEIGHT / 2 - playerShip.boundingBox.y - playerShip.boundingBox.height;
+        upLimit =  WORLD_HEIGHT / 2 - playerShip.boundingBox.y - playerShip.boundingBox.height;
 
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && rightLimit > 0) {
-            playerShip.translate(Math.min(playerShip.movementSpeed * deltaTime, rightLimit), 0f);
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.UP) && upLimit > 0) {
-            playerShip.translate(0f, Math.min(playerShip.movementSpeed * deltaTime, upLimit));
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && leftLimit < 0) {
-            playerShip.translate(Math.max(-playerShip.movementSpeed * deltaTime, leftLimit), 0f);
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN) && downLimit < 0) {
-            playerShip.translate(0f, Math.max(-playerShip.movementSpeed * deltaTime, downLimit));
-        }
 
         //touch input (also mouse)
         if (Gdx.input.isTouched()) {
@@ -277,7 +287,7 @@ class GameScreen implements Screen {
 
         float leftLimit, rightLimit, upLimit, downLimit;
         leftLimit = -enemyShip.boundingBox.x;
-        downLimit = (float) WORLD_HEIGHT / 2 - enemyShip.boundingBox.y;
+        downLimit =  WORLD_HEIGHT / 2 - enemyShip.boundingBox.y;
         rightLimit = WORLD_WIDTH - enemyShip.boundingBox.x - enemyShip.boundingBox.width;
         upLimit = WORLD_HEIGHT - enemyShip.boundingBox.y - enemyShip.boundingBox.height;
 
@@ -310,7 +320,12 @@ class GameScreen implements Screen {
                                 new Explosion(explosionTexture,
                                         new Rectangle(enemyShip.boundingBox),
                                         0.7f));
+                        if(sfxState){death.play(1f);}
                         score += 100;
+                        int gacha = SpaceShooterGame.random.nextInt(100);
+                        if (gacha < 10) {
+                            spawnPowerUp(score, WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
+                        }
                     }
                     laserListIterator.remove();
                     break;
@@ -330,8 +345,8 @@ class GameScreen implements Screen {
                                     1.6f));
                     playerShip.lives--;
                     if (playerShip.lives == 0){
-                        //clearGameState();
-                        game.setScreen(game.mainMenuScreen);
+                        if(sfxState){death.play(1f);}
+                        gameOver = true;
                     }
                 }
                 laserListIterator.remove();
@@ -357,12 +372,11 @@ class GameScreen implements Screen {
         //player lasers
         if (playerShip.canFireLaser()) {
             Laser[] lasers = playerShip.fireLasers();
+            if(sfxState){laser.play(1f);}
             playerLaserList.addAll(Arrays.asList(lasers));
         }
         //enemy lasers
-        ListIterator<EnemyShip> enemyShipListIterator = enemyShipList.listIterator();
-        while (enemyShipListIterator.hasNext()) {
-            EnemyShip enemyShip = enemyShipListIterator.next();
+        for (EnemyShip enemyShip : enemyShipList) {
             if (enemyShip.canFireLaser()) {
                 Laser[] lasers = enemyShip.fireLasers();
                 enemyLaserList.addAll(Arrays.asList(lasers));
@@ -390,6 +404,42 @@ class GameScreen implements Screen {
         }
     }
 
+    private void spawnPowerUp(int score, float x, float y) {
+        if (powerupList.isEmpty()) {
+            int randomType = SpaceShooterGame.random.nextInt(2);  // Assuming 3 types of power-ups
+            if (randomType == 0) {
+                powerupList.add(new PowerUp(PowerUp.PowerUpType.SHIELD, shieldPowerupTextureRegion, x, y, 3, 3));
+            } else {
+                powerupList.add(new PowerUp(PowerUp.PowerUpType.FIRE_RATE, firePowerupTextureRegion, x, y, 3, 3));
+            }
+        }
+    }
+    public void checkPowerUpCollisions() {
+        ListIterator<PowerUp> powerListIterator = powerupList.listIterator();
+        while (powerListIterator.hasNext()) {
+            PowerUp powerup = powerListIterator.next();
+            if (playerShip.intersects(powerup.boundingBox)) {
+                //contact with player ship
+                applyPowerUpEffect(powerup.getType());
+                powerListIterator.remove();
+            }
+            if (powerup.height<0){
+                powerListIterator.remove();
+            }
+        }
+    }
+    private  void applyPowerUpEffect(PowerUp.PowerUpType type){
+        switch (type){
+            case SHIELD:
+                playerShip.shield += 1;
+                break;
+            case FIRE_RATE:
+                playerShip.timeBetweenShots *= 0.999f;
+                break;
+            default:
+                break;
+        }
+    }
     private void renderBackground(float deltaTime) {
 
         //update position of background images
@@ -407,14 +457,24 @@ class GameScreen implements Screen {
                     WORLD_WIDTH, backgroundHeight);
         }
     }
-    private void clearGameState() {
-        paused = true;
+    void clearGameState() {
         // Clear all entities and reset relevant game variables
         enemyShipList.clear();
         playerLaserList.clear();
         enemyLaserList.clear();
         explosionList.clear();
+        powerupList.clear();
+        resetPlayer();
         score = 0;
+        isPaused = false;
+        gameOver = false;
+    }
+    private void resetPlayer(){
+        playerShip = new PlayerShip(WORLD_WIDTH / 2, WORLD_HEIGHT / 4,
+            10, 10,
+            48, 0,
+            1f, 4, 45, 0.5f,
+            playerShipTextureRegion, playerShieldTextureRegion, playerLaserTextureRegion);
     }
     @Override
     public void resize(int width, int height) {
@@ -424,26 +484,60 @@ class GameScreen implements Screen {
 
     @Override
     public void pause() {
-
+        isPaused = true;
     }
 
     @Override
     public void resume() {
-
+        isPaused = false;
     }
 
     @Override
     public void hide() {
-
     }
 
     @Override
     public void show() {
+        stage = new Stage();
 
+        // Load the texture for the pause button
+        pauseTexture = new Texture(Gdx.files.internal("Pause.png"));
+
+        // Create a drawable from the texture
+        TextureRegionDrawable pauseDrawable = new TextureRegionDrawable(pauseTexture);
+
+        // Create the ImageButton with the pause image
+        pauseButton = new ImageButton(pauseDrawable);
+
+
+        // Set the position of the button in the top center of the screen
+        float buttonX = (float) (Gdx.graphics.getWidth() - pauseTexture.getWidth()) / 2;
+        float buttonY = Gdx.graphics.getHeight() - pauseTexture.getHeight() - 50;
+        pauseButton.setPosition(buttonX, buttonY);
+
+        // Add the button to the stage
+        stage.addActor(pauseButton);
+
+        // Add a listener to the button to handle pause functionality
+        pauseButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                // Toggle pause state when button is clicked
+                isPaused = true;
+            }
+        });
+
+        // Set the stage to handle input
+        Gdx.input.setInputProcessor(stage);
     }
+
 
     @Override
     public void dispose() {
+        stage.dispose();
         batch.dispose();
+        laser.dispose();
+        death.dispose();
+        power.dispose();
     }
 }

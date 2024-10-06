@@ -1,6 +1,7 @@
 package com.stardust.crusaders;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
@@ -22,7 +23,7 @@ public class SettingsScreen implements Screen {
     private SpriteBatch batch;
     private Texture menuBGTexture;
     private Camera camera;
-    private boolean sfxState, bgmState = true;
+    private boolean sfxState, bgmState;
     final SpaceShooterGame game;
     private Label titleLabel,sfxLabel, bgmLabel, backLabel;
     private Stage stage;
@@ -30,14 +31,16 @@ public class SettingsScreen implements Screen {
         this.game = game;
         camera = new OrthographicCamera();
         menuBGTexture = new Texture("bg.png");
+        sfxState = game.sfxState;
+        bgmState = game.bgmState;
         batch = new SpriteBatch();
         stage = new Stage();
+        prepareLabel();
     }
     @Override
     public void show() {
         // Load assets here (fonts, textures)
         Gdx.input.setInputProcessor(stage);
-        prepareLabel();
     }
 
     @Override
@@ -47,6 +50,7 @@ public class SettingsScreen implements Screen {
 
         batch.begin();
         batch.draw(menuBGTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        updateLabel();
         batch.end();
         stage.act(delta);
         stage.draw();
@@ -58,22 +62,29 @@ public class SettingsScreen implements Screen {
         GlyphLayout titleLayout = new GlyphLayout(game.fontItalic, titleLabel.getText());
         float titleWidth = titleLayout.width;
         titleLabel.setPosition((Gdx.graphics.getWidth() - titleWidth) / 2, 1800);
-        sfxLabel = new Label("SFX: ON", new Label.LabelStyle(game.fontRegular, customColor));
+        sfxLabel = new Label("SFX: "+(sfxState ? "ON" : "OFF"), new Label.LabelStyle(game.fontRegular, customColor));
         sfxLabel.setPosition(100, 1500);
         sfxLabel.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
                 sfxState = !sfxState; // Toggle sfxState
-                sfxLabel.setText("SFX: " + (sfxState ? "ON" : "OFF"));
+                game.prefs.putBoolean("sfxState", sfxState);
+                game.prefs.flush();
             }
         });
-        bgmLabel = new Label("BGM: ON", new Label.LabelStyle(game.fontRegular, customColor));
+        bgmLabel = new Label("BGM: "+(bgmState ? "ON" : "OFF"), new Label.LabelStyle(game.fontRegular, customColor));
         bgmLabel.setPosition(100, 1300);
         bgmLabel.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
                 bgmState = !bgmState; // Toggle sfxState
-                bgmLabel.setText("BGM: " + (bgmState ? "ON" : "OFF"));
+                if (bgmState){
+                    game.music.play();
+                } else {
+                    game.music.stop();
+                }
+                game.prefs.putBoolean("bgmState", bgmState);
+                game.prefs.flush();
             }
         });
         backLabel = new Label("MAIN MENU", new Label.LabelStyle(game.fontRegular, customColor));
@@ -88,6 +99,10 @@ public class SettingsScreen implements Screen {
         stage.addActor(sfxLabel);
         stage.addActor(bgmLabel);
         stage.addActor(backLabel);
+    }
+    private void updateLabel(){
+        sfxLabel.setText("SFX: " + (sfxState ? "ON" : "OFF"));
+        bgmLabel.setText("BGM: " + (bgmState ? "ON" : "OFF"));
     }
     @Override
     public void resize(int width, int height) {}

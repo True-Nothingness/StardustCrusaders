@@ -2,28 +2,34 @@ images.png
 size:8192,4096
 repeat:none
 Bomber Shield
-bounds:64,96,64,64
+bounds:4320,3888,64,64
 Cannon bullet
-bounds:0,0,32,32
+bounds:64,80,32,32
 Enemy Ship - Fighter
-bounds:4320,3872,64,64
+bounds:4384,3952,64,64
+Enemy Ship - Scout
+bounds:0,48,64,64
 Fast bullet
-bounds:64,84,9,12
+bounds:4384,3940,9,12
 Fighter Shield
-bounds:0,32,64,64
+bounds:64,112,64,64
+Fire Powerup
+bounds:128,144,32,32
 Main Ship
-bounds:4384,3952,48,48
+bounds:0,0,48,48
 Scout Shield
-bounds:0,96,64,64
+bounds:0,112,64,64
 Shield
-bounds:4320,3936,64,64
+bounds:4320,3952,64,64
+Shield Powerup
+bounds:4320,3856,32,32
 Slow bullet
-bounds:128,152,8,8
+bounds:4448,4008,8,8
 Starscape00
-bounds:2160,160,1080,3840
+bounds:2160,176,1080,3840
 Starscape01
-bounds:0,160,1080,3840
+bounds:0,176,1080,3840
 Starscape02
-bounds:3240,160,1080,3840
+bounds:3240,176,1080,3840
 Starscape03
-bounds:1080,160,1080,3840
+bounds:1080,176,1080,3840
