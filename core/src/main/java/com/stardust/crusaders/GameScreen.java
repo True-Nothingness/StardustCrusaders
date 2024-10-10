@@ -241,7 +241,6 @@ class GameScreen implements Screen {
     private void updateAndRenderHUD() {
         //render top row labels
         font.draw(batch, "Score", hudLeftX, hudRow1Y, hudSectionWidth, Align.left, false);
-        //font.draw(batch, "Shield", hudCentreX, hudRow1Y, hudSectionWidth, Align.center, false);
         font.draw(batch, "Lives", hudRightX, hudRow1Y, hudSectionWidth, Align.right, false);
         //render second row values
         font.draw(batch, String.format(Locale.getDefault(), "%06d", score), hudLeftX, hudRow2Y, hudSectionWidth, Align.left, false);
@@ -256,7 +255,7 @@ class GameScreen implements Screen {
                 WORLD_HEIGHT - 5,
                 10, 10,
                 50, 1,
-                1.3f, 1.3f, 20, 0.9f,
+                1.3f, 1.3f, 20, 1f,
                 enemyShipTextureRegion2, enemyShieldTextureRegion2, enemyLaserTextureRegion2));
             enemySpawnTimer -= timeBetweenEnemySpawns;
         } else if (enemySpawnTimer > timeBetweenEnemySpawns) {

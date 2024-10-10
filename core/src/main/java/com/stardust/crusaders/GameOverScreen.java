@@ -24,8 +24,8 @@ public class GameOverScreen implements Screen {
     private SpriteBatch batch;
     private Texture menuBGTexture;
     private TextureAtlas buttonsAtlas;
-    private ImageButton saveButton, resetButton, menuButton;
-    private TextureRegion saveTextureRegion, resetTextureRegion, menuTextureRegion;
+    private ImageButton  resetButton, menuButton;
+    private TextureRegion resetTextureRegion, menuTextureRegion;
     private Camera camera;
     private Viewport viewport;
     private Label titleLabel, scoreLabel, nameLabel;
@@ -45,7 +45,6 @@ public class GameOverScreen implements Screen {
         //set up the texture atlas
         buttonsAtlas = new TextureAtlas("Buttons.atlas");
         //initialize texture regions
-        saveTextureRegion = buttonsAtlas.findRegion("Save");
         resetTextureRegion = buttonsAtlas.findRegion("Repeat");
         menuTextureRegion = buttonsAtlas.findRegion("Menu");
         prepareLabel();
@@ -53,6 +52,7 @@ public class GameOverScreen implements Screen {
     }
     @Override
     public void show() {
+
         Gdx.input.setInputProcessor(stage);
     }
     public void prepareLabel(){
@@ -71,7 +71,7 @@ public class GameOverScreen implements Screen {
     public void prepareButtons(){
         TextureRegionDrawable resetDrawable = new TextureRegionDrawable(resetTextureRegion);
         resetButton = new ImageButton(resetDrawable);
-        resetButton.setPosition((Gdx.graphics.getWidth() - resetButton.getWidth())/3, 700);
+        resetButton.setPosition((Gdx.graphics.getWidth() - resetButton.getWidth())/3, 800);
         resetButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
@@ -81,7 +81,7 @@ public class GameOverScreen implements Screen {
         });
         TextureRegionDrawable menuDrawable = new TextureRegionDrawable(menuTextureRegion);
         menuButton = new ImageButton(menuDrawable);
-        menuButton.setPosition((Gdx.graphics.getWidth() - menuButton.getWidth())*2/3, 700);
+        menuButton.setPosition((Gdx.graphics.getWidth() - menuButton.getWidth())*2/3, 800);
         menuButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
@@ -100,21 +100,13 @@ public class GameOverScreen implements Screen {
     }
     public void saveScore(){
         Color customColor = new Color(0xFF, 0xD6, 0x00, 1f);
-        nameLabel = new Label("You made it to the top!\nInput your name: " + score, new Label.LabelStyle(game.fontRegular, customColor));
+        NameInputListener nameInput = new NameInputListener();
+        nameLabel = new Label("You made it to the top!", new Label.LabelStyle(game.fontRegular, customColor));
         GlyphLayout nameLayout = new GlyphLayout(game.fontItalic, nameLabel.getText());
         float nameWidth = nameLayout.width;
         nameLabel.setPosition((Gdx.graphics.getWidth() - nameWidth) / 2, 1300);
-        TextureRegionDrawable saveDrawable = new TextureRegionDrawable(saveTextureRegion);
-        saveButton = new ImageButton(saveDrawable);
-        saveButton.setPosition((Gdx.graphics.getWidth() - saveButton.getWidth())/2, 1000);
-        saveButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-
-            }
-        });
+        Gdx.input.getTextInput(nameInput, "Engrave your name, pilot!", "","Your name");
         stage.addActor(nameLabel);
-        stage.addActor(saveButton);
     }
     @Override
     public void render(float delta) {
@@ -153,6 +145,7 @@ public class GameOverScreen implements Screen {
 
     @Override
     public void dispose() {
-
+        batch.dispose();
+        stage.dispose();
     }
 }

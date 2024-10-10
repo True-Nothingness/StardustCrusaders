@@ -3,6 +3,7 @@ package com.stardust.crusaders;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -27,7 +28,7 @@ public class SettingsScreen implements Screen {
     final SpaceShooterGame game;
     private Label titleLabel,sfxLabel, bgmLabel, backLabel, difficultyLabel;
     private Stage stage;
-    private SpaceShooterGame.MODE mode;
+    private Music menu;
 
     SettingsScreen(final SpaceShooterGame game){
         this.game = game;
@@ -37,7 +38,6 @@ public class SettingsScreen implements Screen {
         bgmState = game.bgmState;
         batch = new SpriteBatch();
         stage = new Stage();
-        mode = game.mode;
         prepareLabel();
     }
     @Override
@@ -75,37 +75,36 @@ public class SettingsScreen implements Screen {
                 game.prefs.flush();
             }
         });
-        bgmLabel = new Label("MODE: "+(bgmState ? "ON" : "OFF"), new Label.LabelStyle(game.fontRegular, customColor));
+        bgmLabel = new Label("BGM: "+(bgmState ? "ON" : "OFF"), new Label.LabelStyle(game.fontRegular, customColor));
         bgmLabel.setPosition(100, 1300);
         bgmLabel.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
                 bgmState = !bgmState; // Toggle sfxState
                 if (bgmState){
-                    game.music.play();
+                    game.menu.play();
                 } else {
-                    game.music.stop();
+                    game.menu.stop();
                 }
                 game.prefs.putBoolean("bgmState", bgmState);
                 game.prefs.flush();
             }
         });
-        difficultyLabel = new Label("MODE: "+mode.name(), new Label.LabelStyle(game.fontRegular, customColor));
+        difficultyLabel = new Label("MODE: "+game.mode.name(), new Label.LabelStyle(game.fontRegular, customColor));
         difficultyLabel.setPosition(100, 1100);
         difficultyLabel.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
                 if(game.mode.equals(SpaceShooterGame.MODE.MEDIUM)){
-                    mode = SpaceShooterGame.MODE.HARD;
-                    game.gameScreen.
+                    game.mode = SpaceShooterGame.MODE.HARD;
                     game.prefs.putInteger("mode", 2);
                     game.prefs.flush();
                 } else if (game.mode.equals(SpaceShooterGame.MODE.HARD)) {
-                    mode = SpaceShooterGame.MODE.EASY;
+                    game.mode = SpaceShooterGame.MODE.EASY;
                     game.prefs.putInteger("mode", 0);
                     game.prefs.flush();
                 } else {
-                    mode = SpaceShooterGame.MODE.MEDIUM;
+                    game.mode = SpaceShooterGame.MODE.MEDIUM;
                     game.prefs.putInteger("mode", 1);
                     game.prefs.flush();
                 }
@@ -128,7 +127,7 @@ public class SettingsScreen implements Screen {
     private void updateLabel(){
         sfxLabel.setText("SFX: " + (sfxState ? "ON" : "OFF"));
         bgmLabel.setText("BGM: " + (bgmState ? "ON" : "OFF"));
-        difficultyLabel.setText("MODE: "+mode.name());
+        difficultyLabel.setText("MODE: "+game.mode.name());
     }
     @Override
     public void resize(int width, int height) {}
