@@ -25,6 +25,7 @@ public class SpaceShooterGame extends Game {
     Music music, menu;
     Sound death, laser, power;
     boolean bgmState, sfxState = true;
+    private DatabaseInterface databaseInterface;
     Preferences prefs;
     enum MODE{
         EASY,
@@ -86,7 +87,12 @@ public class SpaceShooterGame extends Game {
         // Start with the Main Menu Screen
         setScreen(mainMenuScreen);
     }
-
+    public SpaceShooterGame(DatabaseInterface databaseInterface){
+        this.databaseInterface = databaseInterface;
+    }
+    public DatabaseInterface getDatabaseInterface(){
+        return databaseInterface;
+    }
     @Override
     public void dispose() {
         mainMenuScreen.dispose();

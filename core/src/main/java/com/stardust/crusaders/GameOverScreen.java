@@ -15,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
@@ -24,12 +25,13 @@ public class GameOverScreen implements Screen {
     private SpriteBatch batch;
     private Texture menuBGTexture;
     private TextureAtlas buttonsAtlas;
-    private ImageButton  resetButton, menuButton;
-    private TextureRegion resetTextureRegion, menuTextureRegion;
+    private ImageButton saveButton, resetButton, menuButton;
+    private TextureRegion saveTextureRegion, resetTextureRegion, menuTextureRegion;
     private Camera camera;
     private Viewport viewport;
     private Label titleLabel, scoreLabel, nameLabel;
     private Stage stage;
+    private TextField nameInput;
     int score;
     final SpaceShooterGame game;
     //world parameters
@@ -45,6 +47,7 @@ public class GameOverScreen implements Screen {
         //set up the texture atlas
         buttonsAtlas = new TextureAtlas("Buttons.atlas");
         //initialize texture regions
+        saveTextureRegion = buttonsAtlas.findRegion("Save");
         resetTextureRegion = buttonsAtlas.findRegion("Repeat");
         menuTextureRegion = buttonsAtlas.findRegion("Menu");
         prepareLabel();
@@ -52,7 +55,6 @@ public class GameOverScreen implements Screen {
     }
     @Override
     public void show() {
-
         Gdx.input.setInputProcessor(stage);
     }
     public void prepareLabel(){
@@ -71,7 +73,7 @@ public class GameOverScreen implements Screen {
     public void prepareButtons(){
         TextureRegionDrawable resetDrawable = new TextureRegionDrawable(resetTextureRegion);
         resetButton = new ImageButton(resetDrawable);
-        resetButton.setPosition((Gdx.graphics.getWidth() - resetButton.getWidth())/3, 800);
+        resetButton.setPosition((Gdx.graphics.getWidth() - resetButton.getWidth())/3, 700);
         resetButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
@@ -81,7 +83,7 @@ public class GameOverScreen implements Screen {
         });
         TextureRegionDrawable menuDrawable = new TextureRegionDrawable(menuTextureRegion);
         menuButton = new ImageButton(menuDrawable);
-        menuButton.setPosition((Gdx.graphics.getWidth() - menuButton.getWidth())*2/3, 800);
+        menuButton.setPosition((Gdx.graphics.getWidth() - menuButton.getWidth())*2/3, 700);
         menuButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
@@ -100,14 +102,41 @@ public class GameOverScreen implements Screen {
     }
     public void saveScore(){
         Color customColor = new Color(0xFF, 0xD6, 0x00, 1f);
-        NameInputListener nameInput = new NameInputListener();
-        nameLabel = new Label("You made it to the top!", new Label.LabelStyle(game.fontRegular, customColor));
+        nameLabel = new Label("You made it to the top!\nInput your name: " + score, new Label.LabelStyle(game.fontRegular, customColor));
         GlyphLayout nameLayout = new GlyphLayout(game.fontItalic, nameLabel.getText());
         float nameWidth = nameLayout.width;
         nameLabel.setPosition((Gdx.graphics.getWidth() - nameWidth) / 2, 1300);
-        Gdx.input.getTextInput(nameInput, "Engrave your name, pilot!", "","Your name");
+        TextField.TextFieldStyle textFieldStyle = new TextField.TextFieldStyle();
+        textFieldStyle.font = game.fontItalic;  // Use the loaded font
+        textFieldStyle.fontColor = Color.WHITE;
+        nameInput = new TextField("", textFieldStyle);  // Input field for player's name
+        float textFieldWidth = 400;  // Desired width
+        float textFieldHeight = 60;   // Desired height
+        nameInput.setSize(textFieldWidth, textFieldHeight);
+        nameInput.setPosition((Gdx.graphics.getWidth() - textFieldWidth) / 2, 1200);
+        TextureRegionDrawable saveDrawable = new TextureRegionDrawable(saveTextureRegion);
+        saveButton = new ImageButton(saveDrawable);
+        saveButton.setPosition((Gdx.graphics.getWidth() - saveButton.getWidth())/2, 1000);
+        saveButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                String playerName = nameInput.getText();
+                if (!playerName.isEmpty()){
+                    boolean success = game.getDatabaseInterface().insertScore(playerName, score);
+                    if (success){
+                        System.out.println("Saved");
+                    }
+                    else{
+                        System.out.println("Failed");
+                    }
+                }
+            }
+        });
         stage.addActor(nameLabel);
+        stage.addActor(nameInput);
+        stage.addActor(saveButton);
     }
+
     @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(0, 0, 0.2f, 1);
@@ -116,6 +145,7 @@ public class GameOverScreen implements Screen {
         batch.begin();
         batch.draw(menuBGTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         updateScore();
+        saveScore();
         batch.end();
         stage.act(delta);
         stage.draw();
@@ -145,7 +175,6 @@ public class GameOverScreen implements Screen {
 
     @Override
     public void dispose() {
-        batch.dispose();
-        stage.dispose();
+
     }
 }
