@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
+import com.stardust.crusaders.DatabaseInterface;
 import com.stardust.crusaders.SpaceShooterGame;
 
 public class AndroidLauncher extends AndroidApplication {
@@ -15,7 +16,7 @@ public class AndroidLauncher extends AndroidApplication {
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
-        initialize(new SpaceShooterGame(), config);
+        DatabaseInterface databaseInterface = new AndroidDatabaseHelper(this);
+        initialize(new SpaceShooterGame(databaseInterface), config);
 	}
-
 }
