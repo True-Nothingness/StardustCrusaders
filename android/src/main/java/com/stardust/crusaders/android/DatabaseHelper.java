@@ -62,6 +62,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return topScores;
     }
+    public boolean isTopScore(int score) {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Query to get the top 5 scores, ordered by descending score
+        Cursor cursor = db.query(TABLE_NAME,
+            new String[] {COLUMN_SCORE},
+            null,
+            null,
+            null,
+            null,
+            COLUMN_SCORE + " DESC", // Sort by score in descending order
+            "5"); // Limit to top 5
+
+        boolean result = false;
+
+        if (cursor.moveToLast()) {  // Move to the 5th highest score
+            int fifthScore = cursor.getInt(0);
+            if (score >= fifthScore) {
+                result = true;
+            }
+        } else {
+            // If there are less than 5 scores, any score is a top score
+            result = true;
+        }
+
+        cursor.close();
+        db.close();
+        return result;
+    }
+
     public void deleteAllScores() {
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DELETE FROM " + TABLE_NAME);

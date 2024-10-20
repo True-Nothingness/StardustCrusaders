@@ -467,7 +467,7 @@ class GameScreen implements Screen {
                 playerShip.shield += 1;
                 break;
             case FIRE_RATE:
-                playerShip.timeBetweenShots *= 0.99f;
+                playerShip.timeBetweenShots *= 0.9f;
                 break;
             default:
                 break;

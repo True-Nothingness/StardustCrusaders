@@ -91,7 +91,7 @@ public class MainMenuScreen implements Screen {
                 game.setScreen(game.settingsScreen);
             }
         });
-        hsLabel = new Label("HIGHSCORE", new Label.LabelStyle(game.fontRegular, customColor));
+        hsLabel = new Label("HIGH SCORE", new Label.LabelStyle(game.fontRegular, customColor));
         hsLabel.setPosition(100, 1100);
         hsLabel.addListener(new ClickListener(){
             @Override

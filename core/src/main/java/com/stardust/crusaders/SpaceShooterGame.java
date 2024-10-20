@@ -83,7 +83,7 @@ public class SpaceShooterGame extends Game {
         music.setLooping(true);
         music.setVolume(0.05f);
         menu.setLooping(true);
-        menu.setVolume(0.3f);
+        menu.setVolume(0.2f);
         // Start with the Main Menu Screen
         setScreen(mainMenuScreen);
     }

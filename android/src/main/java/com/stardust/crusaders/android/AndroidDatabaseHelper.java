@@ -16,4 +16,5 @@ public class AndroidDatabaseHelper implements DatabaseInterface {
     public String[] getTopScores() {
         return dbhelper.getTopScores();
     }
+    public boolean isTopScore(int score){return dbhelper.isTopScore(score);}
 }
