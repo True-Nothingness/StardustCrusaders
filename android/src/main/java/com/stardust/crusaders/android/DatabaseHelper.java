@@ -77,20 +77,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         boolean result = false;
 
-        if (cursor.moveToLast()) {  // Move to the 5th highest score
+        // Check if there are fewer than 5 scores in the table
+        int rowCount = cursor.getCount();
+        if (rowCount < 5) {
+            // If there are fewer than 5 scores, any score is a top score
+            result = true;
+        } else if (cursor.moveToLast()) {
+            // If there are 5 or more scores, compare with the 5th highest score
             int fifthScore = cursor.getInt(0);
             if (score >= fifthScore) {
                 result = true;
             }
-        } else {
-            // If there are less than 5 scores, any score is a top score
-            result = true;
         }
 
         cursor.close();
         db.close();
         return result;
     }
+
 
     public void deleteAllScores() {
         SQLiteDatabase db = this.getWritableDatabase();

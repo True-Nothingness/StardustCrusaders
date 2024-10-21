@@ -15,6 +15,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -355,7 +356,8 @@ class GameScreen implements Screen {
                         score += 100*multiplier;
                         int gacha = SpaceShooterGame.random.nextInt(100);
                         if (gacha < gachaRate) {
-                            spawnPowerUp(score, WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
+                            spawnPowerUp(score, MathUtils.random(50, WORLD_WIDTH - 50), MathUtils.random(50, WORLD_HEIGHT / 3));
+
                         }
                     }
                     laserListIterator.remove();
@@ -506,8 +508,8 @@ class GameScreen implements Screen {
     private void resetPlayer(){
         playerShip = new PlayerShip(WORLD_WIDTH / 2, WORLD_HEIGHT / 4,
             10, 10,
-            48, 0,
-            1f, 4, 45, 0.5f,
+            60, 0,
+            2f, 4.2f, 45, 0.5f,
             playerShipTextureRegion, playerShieldTextureRegion, playerLaserTextureRegion);
     }
     @Override

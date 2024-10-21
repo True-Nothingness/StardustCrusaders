@@ -103,10 +103,10 @@ public class GameOverScreen implements Screen {
     public void saveScore(){
         Color customColor = new Color(0xFF, 0xD6, 0x00, 1f);
         NameInputListener nameInput = new NameInputListener(game, score);
-        nameLabel = new Label("You made it to the top!\n    Congratulations!", new Label.LabelStyle(game.fontRegular, customColor));
+        nameLabel = new Label("You made it to the top!", new Label.LabelStyle(game.fontRegular, customColor));
         GlyphLayout nameLayout = new GlyphLayout(game.fontRegular, nameLabel.getText());
         float nameWidth = nameLayout.width;
-        nameLabel.setPosition((Gdx.graphics.getWidth() - nameWidth) / 2, 1300);
+        nameLabel.setPosition((Gdx.graphics.getWidth() - nameWidth) / 2, 1220);
         Gdx.input.getTextInput(nameInput, "Engrave your name, pilot!", "","Your name");
         stage.addActor(nameLabel);
     }
@@ -143,7 +143,10 @@ public class GameOverScreen implements Screen {
 
     @Override
     public void hide() {
-
+        if (nameLabel != null) {
+            nameLabel.remove();
+            nameLabel = null;
+        }
     }
 
     @Override
