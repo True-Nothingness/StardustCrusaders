@@ -89,7 +89,7 @@ class GameScreen implements Screen {
 
     //Heads-Up Display
     BitmapFont font;
-    float hudVerticalMargin, hudLeftX, hudRightX, hudCentreX, hudRow1Y, hudRow2Y, hudSectionWidth;
+    float hudVerticalMargin, hudLeftX, hudRightX, hudCentreX, hudRow1Y, hudRow2Y, hudRow3Y, hudRow4Y, hudSectionWidth;
 
     GameScreen(final SpaceShooterGame game) {
         this.game = game;
@@ -186,7 +186,9 @@ class GameScreen implements Screen {
         hudCentreX = WORLD_WIDTH / 3;
         hudRow1Y = WORLD_HEIGHT - hudVerticalMargin;
         hudRow2Y = hudRow1Y - hudVerticalMargin - font.getCapHeight();
-        hudSectionWidth = WORLD_WIDTH / 3;
+        hudRow3Y = hudRow2Y - hudVerticalMargin - font.getCapHeight();
+        hudRow4Y = hudRow3Y - hudVerticalMargin - font.getCapHeight();
+        hudSectionWidth = WORLD_WIDTH / (2.8f);
     }
 
     @Override
@@ -243,9 +245,11 @@ class GameScreen implements Screen {
         //render top row labels
         font.draw(batch, "Score", hudLeftX, hudRow1Y, hudSectionWidth, Align.left, false);
         font.draw(batch, "Lives", hudRightX, hudRow1Y, hudSectionWidth, Align.right, false);
+        font.draw(batch, "Shields", hudRightX, hudRow3Y, hudSectionWidth, Align.right, false);
         //render second row values
         font.draw(batch, String.format(Locale.getDefault(), "%06d", score), hudLeftX, hudRow2Y, hudSectionWidth, Align.left, false);
         font.draw(batch, String.format(Locale.getDefault(), "%02d", playerShip.lives), hudRightX, hudRow2Y, hudSectionWidth, Align.right, false);
+        font.draw(batch, String.format(Locale.getDefault(), "%02d", playerShip.shield), hudRightX, hudRow4Y, hudSectionWidth, Align.right, false);
     }
 
     private void spawnEnemyShips(float deltaTime) {
@@ -271,34 +275,28 @@ class GameScreen implements Screen {
     }
 
     private void detectInput(float deltaTime) {
-
         float leftLimit, rightLimit, upLimit, downLimit;
         leftLimit = -playerShip.boundingBox.x;
         downLimit = -playerShip.boundingBox.y;
         rightLimit = WORLD_WIDTH - playerShip.boundingBox.x - playerShip.boundingBox.width;
         upLimit =  WORLD_HEIGHT / 2 - playerShip.boundingBox.y - playerShip.boundingBox.height;
-
         //touch input (also mouse)
         if (Gdx.input.isTouched()) {
             //get the screen position of the touch
             float xTouchPixels = Gdx.input.getX();
             float yTouchPixels = Gdx.input.getY();
-
             //convert to world position
             touchPoint.set(xTouchPixels, yTouchPixels);
             touchPoint = viewport.unproject(touchPoint);
-
             //calculate the x and y differences
             playerShipCentre.set(
                 playerShip.boundingBox.x + playerShip.boundingBox.width / 2,
                 playerShip.boundingBox.y + playerShip.boundingBox.height / 2);
 
             float touchDistance = touchPoint.dst(playerShipCentre);
-
             if (touchDistance > TOUCH_MOVEMENT_THRESHOLD) {
                 float xTouchDifference = touchPoint.x - playerShipCentre.x;
                 float yTouchDifference = touchPoint.y - playerShipCentre.y;
-
                 //scale to the maximum speed of the ship
                 float xMove = xTouchDifference / touchDistance * playerShip.movementSpeed * deltaTime;
                 float yMove = yTouchDifference / touchDistance * playerShip.movementSpeed * deltaTime;
@@ -308,7 +306,6 @@ class GameScreen implements Screen {
 
                 if (yMove > 0) yMove = Math.min(yMove, upLimit);
                 else yMove = Math.max(yMove, downLimit);
-
                 playerShip.translate(xMove, yMove);
             }
         }
@@ -343,7 +340,6 @@ class GameScreen implements Screen {
             ListIterator<EnemyShip> enemyShipListIterator = enemyShipList.listIterator();
             while (enemyShipListIterator.hasNext()) {
                 EnemyShip enemyShip = enemyShipListIterator.next();
-
                 if (enemyShip.intersects(laser.boundingBox)) {
                     //contact with enemy ship
                     if (enemyShip.hitAndCheckDestroyed(laser)) {
@@ -357,7 +353,6 @@ class GameScreen implements Screen {
                         int gacha = SpaceShooterGame.random.nextInt(100);
                         if (gacha < gachaRate) {
                             spawnPowerUp(score, MathUtils.random(50, WORLD_WIDTH - 50), MathUtils.random(50, WORLD_HEIGHT / 3));
-
                         }
                     }
                     laserListIterator.remove();
